@@ -29,6 +29,7 @@ local Config = {
 
     InfiniteJumpEnabled = false,
     InfiniteJumpHold = false,
+    Disabler = false,
 
     VelocityPlusEnabled = false,
     VelocityPlusDirection = "Random",
@@ -713,6 +714,47 @@ local function StopInfiniteJump()
     if ijConnection then ijConnection:Disconnect(); ijConnection = nil end
     if ijHeldConnection then ijHeldConnection:Disconnect(); ijHeldConnection = nil end
 end
+-- disabler stuff
+local krystalOldMomentum = nil
+
+local function StartKrystalDisabler()
+    if krystalOldMomentum then return end
+    
+    local controller = bedwars and bedwars.GlacialSkaterController
+   
+
+    krystalOldMomentum = controller.updateMomentum
+    
+    -- Hook the function
+    controller.updateMomentum = function(self)
+        self.momentum = 9e9
+        self.lastMomentumReport = 9e9
+        
+        pcall(function()
+            bedwars.Client:Get('MomentumUpdate'):SendToServer({
+                momentumValue = 9e9
+            })
+        end)
+        
+        return krystalOldMomentum(self) -- call original if needed
+    end
+
+    -- Initial boost
+    pcall(function()
+        controller:updateMomentum(9e9)
+    end)
+    
+    --print("✅ Krystal Disabler enabled")
+end
+
+local function StopKrystalDisabler()
+    local controller = bedwars and bedwars.GlacialSkaterController
+    if controller and krystalOldMomentum then
+        controller.updateMomentum = krystalOldMomentum
+        krystalOldMomentum = nil
+        --print("❌ Krystal Disabler disabled")
+    end
+end
 
 -- ==========================================
 -- VIEWMODEL LOGIC
@@ -1061,7 +1103,7 @@ CreateModule("HUD", RenderWindow, function(s)
     if HudFrame then HudFrame.Visible = s end
 end)
 
-local dmgSettings = CreateModule("Damage Affects", RenderWindow, function(s)
+local dmgSettings = CreateModule("Damage Effects", RenderWindow, function(s)
     Config.DamageAffectsEnabled = s
     if s then
         StartDamageAffects()
@@ -1190,6 +1232,15 @@ end)
 
 CreateToggleSetting("Only When Targeting", vpSettings, function(s)
     Config.VelocityPlusTargetOnly = s
+end)
+
+local krystalModule = CreateModule("Krystal Disabler", CombatWindow, function(s)  -- or MovementWindow
+    Config.KrystalDisablerEnabled = s
+    if s then
+        StartKrystalDisabler()
+    else
+        StopKrystalDisabler()
+    end
 end)
 
 -- Keybind (P) with safety check
