@@ -52,7 +52,7 @@ local Config = {
     ViewmodelOutlineTrans = 0.5,
     ViewmodelRotX = 0,
     ViewmodelRotY = 0,
-    ViewmodelRotZ = 0
+    ViewmodelRotZ = 0,
 
     NukerEnabled = false,
     NukerRange = 18,
