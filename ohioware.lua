@@ -1083,11 +1083,6 @@ RunService.RenderStepped:Connect(function()
         local ping = math.floor(lplr:GetNetworkPing() * 1000)
         PingLabel.Text = "Ping: " .. ping .. "ms" --seriously fuck this game
         
-        local root = lplr.Character and lplr.Character:FindFirstChild("HumanoidRootPart")
-        if root then
-            local owner = root:GetNetworkOwner()
-            NetLabel.Text = "Network: " .. (owner == lplr and "LocalPlayer" or "Server")
-        end
     end
 end)
 
