@@ -29,12 +29,15 @@ local Config = {
 
     InfiniteJumpEnabled = false,
     InfiniteJumpHold = false,
-    Disabler = false,
+    DisablerEnabled = false,
 
     VelocityPlusEnabled = false,
     VelocityPlusDirection = "Random",
     VelocityPlusChance = 100,
     VelocityPlusTargetOnly = false,
+    KillAuraEnabled = false,
+    KillAuraRange = 18,
+    KillAuraAngle = 180,
 
     ViewmodelEnabled = false,
     ViewmodelNoBob = true,
@@ -756,6 +759,84 @@ local function StopKrystalDisabler()
     end
 end
 
+local kaConnection = nil
+local kaLastSwing = 0
+
+local function StartKillaura()
+    if kaConnection then return end
+    
+    kaConnection = RunService.Heartbeat:Connect(function()
+        if not Config.KillauraEnabled then return end
+        local char = lplr.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root or not bedwars or not bedwars.SwordController then return end
+        
+        -- Basic checks
+        if tick() - kaLastSwing < 0.1 then return end
+        if bedwars.AppController and bedwars.AppController:isLayerOpen(bedwars.UILayers.MAIN) then return end
+        
+        local sword = bedwars.getInventory and bedwars.getInventory(lplr).hand or nil
+        if not sword or not sword.tool then return end
+        
+        local meta = bedwars.ItemMeta[sword.tool.Name]
+        if not meta or not meta.sword then return end
+        
+        -- Find best target
+        local bestTarget, bestDist = nil, Config.KillauraRange + 4
+        for _, plr in Players:GetPlayers() do
+            if plr ~= lplr and plr.Character then
+                local tRoot = plr.Character:FindFirstChild("HumanoidRootPart")
+                if tRoot then
+                    local dist = (tRoot.Position - root.Position).Magnitude
+                    if dist < bestDist then
+                        -- Simple angle check
+                        local dir = (tRoot.Position - root.Position).Unit
+                        local facing = root.CFrame.LookVector
+                        local angle = math.acos(facing:Dot(dir))
+                        if math.deg(angle) <= Config.KillauraAngle / 2 then
+                            bestTarget = plr.Character
+                            bestDist = dist
+                        end
+                    end
+                end
+            end
+        end
+        
+        if bestTarget then
+            local tRoot = bestTarget:FindFirstChild("HumanoidRootPart")
+            if tRoot and (tRoot.Position - root.Position).Magnitude <= Config.KillauraRange + 4 then
+                local dir = (tRoot.Position - root.Position).Unit
+                local pos = root.Position + dir * math.max((tRoot.Position - root.Position).Magnitude - 14.4, 0)
+                
+                pcall(function()
+                    bedwars.Client:Get('SwordHit'):SendToServer({
+                        weapon = sword.tool,
+                        chargedAttack = {chargeRatio = 0},
+                        entityInstance = bestTarget,
+                        validate = {
+                            raycast = {},
+                            targetPosition = {value = tRoot.Position},
+                            selfPosition = {value = pos},
+                        },
+                    })
+                end)
+                
+                kaLastSwing = tick()
+                -- Play swing effect if possible
+                pcall(function()
+                    bedwars.SwordController:playSwordEffect(meta, false)
+                end)
+            end
+        end
+    end)
+end
+
+local function StopKillaura()
+    if kaConnection then
+        kaConnection:Disconnect()
+        kaConnection = nil
+    end
+end
 -- ==========================================
 -- VIEWMODEL LOGIC
 -- ==========================================
@@ -1227,6 +1308,23 @@ end)
 
 CreateToggleSetting("Only When Targeting", vpSettings, function(s)
     Config.VelocityPlusTargetOnly = s
+end)
+
+local kaSettings = CreateModule("Killaura", CombatWindow, function(s)
+    Config.KillauraEnabled = s
+    if s then
+        StartKillaura()
+    else
+        StopKillaura()
+    end
+end)
+
+CreateSlider("Range", 0, 25, 18, kaSettings, function(v)
+    Config.KillauraRange = v
+end)
+
+CreateSlider("Max Angle", 0, 360, 180, kaSettings, function(v)
+    Config.KillauraAngle = v
 end)
 
 local krystalModule = CreateModule("Krystal Disabler", CombatWindow, function(s)  -- or MovementWindow
