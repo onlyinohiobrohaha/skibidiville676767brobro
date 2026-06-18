@@ -53,6 +53,12 @@ local Config = {
     ViewmodelRotX = 0,
     ViewmodelRotY = 0,
     ViewmodelRotZ = 0
+
+    NukerEnabled = false,
+    NukerRange = 18,
+    NukerMode = "Bed",
+    NukerAngle = 180,
+    NukerAutoTool = true
 }
 
 local Colors = {
@@ -717,6 +723,65 @@ local function StopInfiniteJump()
     if ijConnection then ijConnection:Disconnect(); ijConnection = nil end
     if ijHeldConnection then ijHeldConnection:Disconnect(); ijHeldConnection = nil end
 end
+
+-- ==========================================
+-- NUKER / BED BREAKER (from CatV6)
+-- ==========================================
+local nukerConnection = nil
+
+local function StartNuker()
+    if nukerConnection then return end
+    
+    nukerConnection = RunService.Heartbeat:Connect(function()
+        if not Config.NukerEnabled then return end
+        if not lplr.Character or not lplr.Character:FindFirstChild("HumanoidRootPart") then return end
+        
+        local root = lplr.Character.HumanoidRootPart
+        local localPos = root.Position
+        
+        -- Get best tool
+        local tool = nil
+        if Config.NukerAutoTool then
+            for _, item in (bedwars.getInventory and bedwars.getInventory(lplr).items or {}) do
+                local meta = bedwars.ItemMeta[item.itemType]
+                if meta and meta.breakBlock then
+                    tool = item.tool
+                    break
+                end
+            end
+        end
+        
+        for _, block in workspace.Map.Blocks:GetDescendants() do
+            if not block:IsA("BasePart") then continue end
+            local dist = (block.Position - localPos).Magnitude
+            if dist > Config.NukerRange then continue end
+            
+            local isBed = block.Name == "bed" or block:FindFirstAncestor("bed")
+            if Config.NukerMode == "Bed" and not isBed then continue end
+            
+            -- Angle check
+            local dir = (block.Position - localPos).Unit
+            local angle = math.deg(math.acos(root.CFrame.LookVector:Dot(dir)))
+            if angle > Config.NukerAngle / 2 then continue end
+            
+            pcall(function()
+                bedwars.Client:Get('DamageBlock'):SendToServer({
+                    blockRef = {blockPosition = block.Position / 3},
+                    hitPosition = block.Position,
+                    hitNormal = Vector3.new(0, 1, 0)
+                })
+            end)
+        end
+    end)
+end
+
+local function StopNuker()
+    if nukerConnection then
+        nukerConnection:Disconnect()
+        nukerConnection = nil
+    end
+end
+
 -- disabler stuff
 local krystalOldMomentum = nil
 
@@ -1334,6 +1399,32 @@ local krystalModule = CreateModule("Krystal Disabler", CombatWindow, function(s)
     else
         StopKrystalDisabler()
     end
+end)
+
+
+local nukerSettings = CreateModule("Nuker", CombatWindow, function(s)  -- or WorldWindow
+    Config.NukerEnabled = s
+    if s then
+        StartNuker()
+    else
+        StopNuker()
+    end
+end)
+
+CreateDropdown("Mode", {"All", "Bed"}, "Bed", nukerSettings, function(v)
+    Config.NukerMode = v
+end)
+
+CreateSlider("Range", 5, 30, 18, nukerSettings, function(v)
+    Config.NukerRange = v
+end)
+
+CreateSlider("Max Angle", 30, 360, 180, nukerSettings, function(v)
+    Config.NukerAngle = v
+end)
+
+CreateToggleSetting("Auto Tool", nukerSettings, function(s)
+    Config.NukerAutoTool = s
 end)
 
 -- Keybind (P) with safety check
