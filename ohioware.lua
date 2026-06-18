@@ -64,14 +64,10 @@ local Colors = {
 local Windows = {}
 local AntiVoidPart = nil
 
--- ==========================================
--- UI REGISTRY FOR SAVING/LOADING
--- ==========================================
+-- ui shit
 local UIControls = {}
 
--- ==========================================
--- UI FRAMEWORK HELPERS
--- ==========================================
+-- ui framework
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "PistonwareGUI"
 ScreenGui.Parent = (pcall(function() return CoreGui end) and CoreGui or lplr:WaitForChild("PlayerGui"))
@@ -367,9 +363,7 @@ local function CreateDropdown(name, options, default, parent, callback)
     }
 end
 
--- ==========================================
--- CONFIG SAVE/LOAD WINDOW
--- ==========================================
+-- useless config tab that doesnt work and that no one will use
 local ConfigWindow = CreateWindow("Config", 890)
 
 local saveBtn = Instance.new("TextButton")
@@ -394,7 +388,7 @@ loadBtn.TextSize = 13
 loadBtn.Parent = ConfigWindow
 Instance.new("UICorner", loadBtn).CornerRadius = UDim.new(0, 4)
 
--- Helper: update UI element from saved value
+-- uhm some ui thing
 local function UpdateUIFromConfig()
     for key, ctrl in pairs(UIControls) do
         if ctrl.type == "Module" then
@@ -443,7 +437,7 @@ local function UpdateUIFromConfig()
     end
 end
 
--- Save function
+-- broken save func (will be removed soon)
 saveBtn.MouseButton1Click:Connect(function()
     local saveTable = {}
     for k, v in pairs(Config) do
@@ -462,7 +456,7 @@ saveBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Load function with safety checks
+-- more useless broken config elements (will also be removed soon)
 loadBtn.MouseButton1Click:Connect(function()
     local success, data = pcall(function()
         return readfile("PistonwareConfig.json")
@@ -518,9 +512,7 @@ loadBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ==========================================
--- ANTIVOID LOGIC
--- ==========================================
+-- antivoid stuff
 local lastValidPos = Vector3.new(0, 100, 0)
 
 task.spawn(function()
@@ -570,7 +562,7 @@ local DamageMessages = {
     'Womp!', 'Thunk!', 'Rattle!', 'Kaboom!', 'Wack!', 'Bap!', 'Bomp!',
     'Sock!', 'Chop!', 'Sting!', 'Slice!', 'Swipe!', 'Punch!', 'Tonk!',
     'Bonk!', 'Jolt!', 'Spike!', 'Pierce!', 'Crush!', 'Bruise!', 'Ding!',
-    'Clang!', 'Crashhh!', 'Kablam!'
+    'Clang!', 'Crashhh!', 'Kablam!', 'Ohioware on top!', '.gg/ohioware'
 }
 
 local DamageColors = {
@@ -613,9 +605,7 @@ local function StopDamageAffects()
     end
 end
 
--- ==========================================
--- VELOCITY PLUS LOGIC
--- ==========================================
+-- skidded velocity logic
 local vpRand = Random.new()
 local vpOld = nil
 
@@ -627,7 +617,7 @@ local function rotateY(v, deg)
         v.X * math.sin(r) + v.Z * math.cos(r)
     )
 end
-
+-- do velocity
 local function StartVelocityPlus()
     if vpOld then return end
     vpOld = bedwars.KnockbackUtil.applyKnockback
@@ -686,9 +676,7 @@ local function StopVelocityPlus()
     end
 end
 
--- ==========================================
--- INFINITE JUMP LOGIC
--- ==========================================
+--inf jump stuff
 local ijConnection = nil
 local ijHeldConnection = nil
 local ijHeld = false
@@ -838,9 +826,7 @@ local function StopViewmodel()
     if vmRenderConnection then vmRenderConnection:Disconnect(); vmRenderConnection = nil end
 end
 
--- ==========================================
--- TARGET HUD
--- ==========================================
+-- broken target hud that i will fix next upd 
 local TargetHudFrame = Instance.new("Frame")
 TargetHudFrame.Size = UDim2.new(0, 180, 0, 110)
 TargetHudFrame.Position = UDim2.new(0.5, -90, 0.5, -160)
@@ -1053,7 +1039,7 @@ local PingLabel = CreateHudLine("Ping: 0ms")
 RunService.RenderStepped:Connect(function()
     if Config.HudEnabled then
         local ping = math.floor(lplr:GetNetworkPing() * 1000)
-        PingLabel.Text = "Ping: " .. ping .. "ms"
+        PingLabel.Text = "Ping: " .. ping .. "ms" --seriously fuck this game
         
         local root = lplr.Character and lplr.Character:FindFirstChild("HumanoidRootPart")
         if root then
@@ -1063,9 +1049,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ==========================================
--- INITIALIZE MENU
--- ==========================================
+--finally make menu
 local MovementWindow = CreateWindow("Movement", 50)
 local WorldWindow = CreateWindow("World", 260)
 local RenderWindow = CreateWindow("Render", 470)
